@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD: Create & Read</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input { padding: 10px; width: calc(100% - 22px); margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
+        button:hover { background-color: #2980b9; }
+        .record-item { border-left: 4px solid #3498db; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <!-- CREATE SECTION -->
+    <div class="card">
+        <h2>Add a New Record</h2>
+        <form id="recordForm">
+            <input type="text" id="titleInput" placeholder="Record Title" required>
+            <input type="text" id="detailsInput" placeholder="Record Details" required>
+            <button type="submit">Submit Record</button>
+        </form>
+    </div>
+
+    <!-- READ SECTION -->
+    <div class="card">
+        <h2>Currently Stored Records</h2>
+        <div id="recordsContainer">
+            <p>Loading records...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/records";
+        const form = document.getElementById('recordForm');
+        const container = document.getElementById('recordsContainer');
+
+        // READ: Fetch data from FastAPI
+        async function fetchRecords() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                container.innerHTML = ''; // Clear container
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p>No records found. Add one above!</p>';
+                    return;
+                }
+
+                data.forEach(record => {
+                    const div = document.createElement('div');
+                    div.className = 'record-item';
+                    div.innerHTML = `<strong>${record.title}</strong>: ${record.details}`;
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                container.innerHTML = '<p style="color:red;">Error fetching records. Is the FastAPI server running?</p>';
+            }
+        }
+
+        // CREATE: Send data to FastAPI
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent page reload
+            
+            const title = document.getElementById('titleInput').value;
+            const details = document.getElementById('detailsInput').value;
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: title, details: details })
+            });
+
+            form.reset(); // Clear inputs
+            fetchRecords(); // Refresh the list automatically
+        });
+
+        // Load records immediately when the page opens
+        fetchRecords();
+    </script>
+</body>
+</html>
